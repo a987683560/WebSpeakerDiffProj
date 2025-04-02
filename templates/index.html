@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Audio Streaming</title>
+    <style>
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #startStreaming {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        #startStreaming::before {
+            border-radius: 34%;
+            content: "";
+            width: 8px;
+            height: 8px;
+            border: 0.8px solid #777;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+
+        #startStreaming:active {
+            transform: translateY(-50%) scale(0.9);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.8), inset 0 0 3px rgba(0, 0, 0, 0.5);
+        }
+
+        #startStreaming.active {
+            /*background-color: white;*/
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #nameBar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 6px;
+            box-sizing: border-box;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+        }
+
+        .nameBox {
+            border-radius: 50%;
+            padding: 8px;
+            margin-right: 10px;
+            color: white;
+            min-width: 24px;
+            min-height: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        .message-count {
+            position: absolute;
+            bottom: -1px;
+            right: -2px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            min-width: 10px;
+            min-height: 10px;
+            padding: 1px;
+            font-size: 8px;
+            text-align: center;
+        }
+
+        #messageContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            overflow: auto;
+            flex-direction: column-reverse;
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding-top: calc(20px + 1.5em);
+            /*padding-bottom: calc(20px + 4.3em);*/
+            padding-left: 10px;
+            padding-right: 10px;
+            z-index: 0;
+        }
+
+        /* 滚动条样式（适用于 WebKit 浏览器） */
+        #messageContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messageContainer::-webkit-scrollbar-track {
+            margin-top: 50px;
+            /*margin-bottom: calc(20px + 4.3em);*/
+            background: #ffffff; /* 轨道背景颜色 */
+            border-radius: 4px; /* 轨道圆角 */
+        }
+
+        #messageContainer::-webkit-scrollbar-thumb {
+            background: #888; /* 滑块颜色 */
+            border-radius: 4px; /* 滑块圆角 */
+        }
+
+        .message-box {
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            clear: both;
+            float: left;
+            color: white;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        #wsSetting {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background-color: white;
+            border: 1px solid #ccc;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 1001;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 10px; /* 设置页面添加圆角 */
+        }
+
+        #wsSetting input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 5px; /* 输入框添加圆角 */
+            outline: none; /* 移除聚焦框 */
+            box-shadow: 0 0 0 1px #ccc; /* 默认阴影 */
+            transition: box-shadow 0.2s ease; /* 过渡效果 */
+            border: 1px solid #e0e0e0; /* 细边框，浅浅的灰色 */
+        }
+
+        #wsSetting input:focus {
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* 聚焦时添加阴影 */
+        }
+
+        #wsSetting button {
+            padding: 10px 20px;
+            border-radius: 5px; /* 按钮添加圆角 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 按钮添加阴影 */
+            border: 1px solid #e0e0e0; /* 细边框，浅浅的灰色 */
+        }
+
+        #wsConfirm {
+            position: absolute;
+            bottom: 20px;
+            right: 20px; /* 保存按钮在右下角 */
+        }
+
+        #wsCancel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px; /* 取消按钮在左下角 */
+        }
+
+        /* 新增的设置区域样式 */
+        #nameColorSettings {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .nameColorSetting {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 新增，使子元素水平和垂直都居中 */
+            margin-bottom: 10px;
+            border: 1px solid #ffffff; /* 细边框，浅浅的灰色 */
+            padding: 5px;
+        }
+        .nameColorSetting input[type="text"] {
+            width: auto;
+            height: 32px; /* 调整输入框高度和其他元素适配 */
+            box-sizing: border-box;
+            line-height: 32px; /* 使文本垂直居中 */
+            margin-top: 10px;
+        }
+
+        .nameColorSetting .nameBox {
+            margin-right: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="nameBar">
+        <div id="startStreaming"></div>
+    </div>
+    <div id="messageContainer"></div>
+    <div id="wsSetting">
+        <input type="text" id="wsUrlInput" placeholder="Enter WebSocket URL">
+        <button id="wsConfirm">Confirm</button>
+        <button id="wsCancel">Cancel</button>
+        <div id="nameColorSettings"></div>
+    </div>
+    <script>
+        const startStreamingButton = document.getElementById('startStreaming');
+        let socket;
+        let isRecording = false;
+        let mediaStream;
+        let audioContext;
+        let processor;
+        let wsUrl = 'ws://localhost:8765';
+        // 用于存储上次输入的地址
+        let lastInputUrl = localStorage.getItem('lastInputUrl') || wsUrl;
+
+        const selectColors = [
+            "#914529",
+            "#29CC45",
+            "#4529CC",
+            "#2984CC",
+            "#CCCC29",
+            "#CC2929",
+            "#29CCB8",
+            "#CC8429",
+        ];
+        // 存储每个 id 对应的颜色索引
+        const idColorMap = {};
+        // 存储每个 id 对应的姓名框
+        const idNameBoxMap = {};
+        // 存储每个 id 的消息数量
+        const idMessageCount = {};
+        const messageContainer = document.getElementById('messageContainer');
+        const wsSetting = document.getElementById('wsSetting');
+        const wsUrlInput = document.getElementById('wsUrlInput');
+        const wsConfirm = document.getElementById('wsConfirm');
+        const wsCancel = document.getElementById('wsCancel');
+        const nameColorSettings = document.getElementById('nameColorSettings');
+
+        // 初始状态设置为红色
+        startStreamingButton.style.setProperty('--line-color', 'red');
+
+        function connectToWebSocket(url) {
+            if (socket) {
+                socket.close();
+            }
+            socket = new WebSocket(url);
+
+            socket.addEventListener('open', (event) => {
+                console.log('WebSocket connection established');
+                // 连接成功，设置为绿色
+                startStreamingButton.style.setProperty('--line-color', 'green');
+                wsUrl = url;
+            });
+
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+                // 发生错误，设置为红色
+                startStreamingButton.style.setProperty('--line-color', 'red');
+                alert('Connection failed. Please try again.');
+            });
+
+            socket.addEventListener('close', (event) => {
+                console.log('WebSocket connection closed:', event);
+                // 连接关闭，设置为红色
+                startStreamingButton.style.setProperty('--line-color', 'red');
+            });
+
+            // 修改按钮中间线的颜色
+            const style = document.createElement('style');
+            style.textContent = `
+                #startStreaming::before {
+                    border-color: var(--line-color);
+                }
+            `;
+            document.head.appendChild(style);
+
+            socket.addEventListener('message', (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    const id = String(data.id); // 统一转换为字符串类型
+                    const text = data.text;
+                    const name = data.name || '';
+
+                    // 为该 id 分配一个颜色
+                    if (!idColorMap.hasOwnProperty(id)) {
+                        console.log('new id', id);
+                        idColorMap[id] = Object.keys(idColorMap).length % selectColors.length;
+                    }
+                    const color = selectColors[idColorMap[id]];
+
+                    // 处理姓名栏
+                    if (!idNameBoxMap.hasOwnProperty(id)) {
+                        console.log('new name', id);
+                        const nameBar = document.getElementById('nameBar');
+                        const nameBox = document.createElement('div');
+                        nameBox.classList.add('nameBox');
+                        nameBox.style.backgroundColor = color;
+                        if (!nameBox.textContent){
+                            nameBox.textContent = name;}
+                        nameBar.insertBefore(nameBox, startStreamingButton);
+                        idNameBoxMap[id] = nameBox;
+
+                        // 初始化消息数量
+                        idMessageCount[id] = 0;
+
+                        // 创建消息数量框
+                        const messageCountBox = document.createElement('div');
+                        messageCountBox.classList.add('message-count');
+                        messageCountBox.textContent = '0';
+                        nameBox.appendChild(messageCountBox);
+
+                        // 在设置界面添加对应的设置项
+                        addNameColorSetting(id, name, color);
+                    }
+
+                    // 增加消息数量
+                    idMessageCount[id]++;
+                    const messageCountBox = idNameBoxMap[id].querySelector('.message-count');
+                    messageCountBox.textContent = idMessageCount[id];
+
+                    // 创建新的消息框
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message-box');
+                    messageDiv.style.backgroundColor = color;
+                    messageDiv.textContent = text;
+                    messageDiv.dataset.id = id; // 绑定 id
+
+                    // 将新消息框添加到消息容器的末尾
+                    messageContainer.prepend(messageDiv);
+
+                    // 滚动到消息容器底部
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+
+                    // 将对应的 namebox 移动到最左边
+                    const nameBar = document.getElementById('nameBar');
+                    const nameBox = idNameBoxMap[id];
+                    if (nameBox.parentNode) {
+                        nameBar.insertBefore(nameBox, nameBar.firstChild);
+                    }
+
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                    const newMessage = document.createElement('p');
+                    newMessage.textContent = event.data;
+
+                    // 将错误消息添加到消息容器的末尾
+                    messageContainer.appendChild(newMessage);
+
+                    // 滚动到消息容器底部
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                    console.log('Received message:', event.data);
+                }
+            });
+        }
+
+        function addNameColorSetting(id, name, color) {
+            const settingDiv = document.createElement('div');
+            settingDiv.classList.add('nameColorSetting');
+
+            const nameBox = document.createElement('div');
+            nameBox.classList.add('nameBox');
+            nameBox.style.backgroundColor = color;
+            nameBox.textContent = name;
+            settingDiv.appendChild(nameBox);
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = name;
+            nameInput.placeholder = 'Enter name';
+            settingDiv.appendChild(nameInput);
+
+            // 监听输入框的变化，更新 nameBar 中的 nameBox
+            nameInput.addEventListener('input', function () {
+                const newName = this.value;
+                const nameBoxInBar = idNameBoxMap[id];
+                if (nameBoxInBar) {
+                    // 修改部分：只更新文本节点
+                    if (nameBoxInBar.firstChild && nameBoxInBar.firstChild.nodeType === Node.TEXT_NODE) {
+                        nameBoxInBar.firstChild.nodeValue = newName;
+                    } else {
+                        // 如果没有文本节点，创建一个新的文本节点
+                        const textNode = document.createTextNode(newName);
+                        nameBoxInBar.prepend(textNode);
+                    }
+                }
+            });
+
+            nameColorSettings.appendChild(settingDiv);
+        }
+
+        connectToWebSocket(wsUrl);
+
+        startStreamingButton.addEventListener('touchstart', () => {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(30);
+            }
+        });
+
+        startStreamingButton.addEventListener('dblclick', () => {
+            // 显示设置页面时，填充上次输入的地址
+            wsUrlInput.value = lastInputUrl;
+            wsSetting.style.display = 'block';
+        });
+
+        wsConfirm.addEventListener('click', () => {
+            const newUrl = wsUrlInput.value;
+            // 保存本次输入的地址
+            lastInputUrl = newUrl;
+            localStorage.setItem('lastInputUrl', newUrl);
+            connectToWebSocket(newUrl);
+            wsSetting.style.display = 'none';
+        });
+
+        wsCancel.addEventListener('click', () => {
+            wsSetting.style.display = 'none';
+        });
+
+        startStreamingButton.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    startStreamingButton.classList.add('active');
+                    isRecording = true;
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(mediaStream);
+                    processor = audioContext.createScriptProcessor(1024, 1, 1);
+
+                    source.connect(processor);
+                    processor.connect(audioContext.destination);
+
+                    processor.onaudioprocess = (event) => {
+                        const inputBuffer = event.inputBuffer.getChannelData(0);
+                        const int16Array = new Int16Array(inputBuffer.length);
+                        for (let i = 0; i < inputBuffer.length; i++) {
+                            const sample = Math.max(-1, Math.min(1, inputBuffer[i]));
+                            int16Array[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                        }
+                        socket.send(int16Array.buffer);
+                    };
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                }
+            } else {
+                startStreamingButton.classList.remove('active');
+                isRecording = false;
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                if (processor) {
+                    processor.disconnect();
+                }
+                if (audioContext) {
+                    audioContext.close();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

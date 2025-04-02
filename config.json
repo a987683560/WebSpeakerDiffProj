@@ -1,0 +1,30 @@
+{
+    "audio_settings": {
+        "audio_channels": 1,
+        "audio_rate": 16000,
+        "chunk": 1024,
+        "audio_output_path": "./audio_output/"
+    },
+    "vad_settings": {
+        "vad_mode": 3,
+        "check_vad_threshold": 3,
+        "check_speak_alive_threshold": 1
+    },
+    "check_cycle_settings": {
+        "check_buffer_cycle": 0.1
+    },
+    "speaker_id_settings": {
+        "speaker_id_check_cycle": 4,
+        "speaker_id_check_threshold": 2
+    },
+    "ollama_settings": {
+        "url": "http://localhost:11434/api/generate",
+        "model": "qwen2.5:0.5b",
+        "prompt": "将此内容翻译成英语（不要带任何多余的话，不需要解释，只需要翻译即可）：",
+        "temperature": 0.7,
+        "top_p": 0.9
+    },
+    "funasr_settings": {
+        "thred_sv": 0.35
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "1": {
+        "name": "郭德纲",
+        "audio_path": "./speak_audio/135ae2a3-5a38-43a3-a38c-80b750c9b380_1744030453.wav"
+    },
+    "2": {
+        "name": "曼波",
+        "audio_path": "./speak_audio/b6f6876a-7089-4d17-a035-79168c915ca2_1744030799.wav"
+    },
+    "3": {
+        "name": "ai男",
+        "audio_path": "./speak_audio/5062fad2-94f8-4dcc-8e71-abef92c08b14_1744031612.wav"
+    }
+}
