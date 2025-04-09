@@ -495,7 +495,29 @@
             wsSetting.style.display = 'none';
         });
 
+        function isWebSocketConnected() {
+            return socket && socket.readyState === WebSocket.OPEN;
+        }
+
         startStreamingButton.addEventListener('click', async () => {
+            // 如果WebSocket未连接，先尝试连接
+            if (!isWebSocketConnected()) {
+                try {
+                    connectToWebSocket(wsUrl);
+                    // 等待一小段时间让连接建立
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    // 如果仍然未连接，则提示用户
+                    if (!isWebSocketConnected()) {
+                        // alert('WebSocket connection failed. Please check the URL and try again.');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('WebSocket connection error:', error);
+                    // alert('Failed to connect to WebSocket.');
+                    return;
+                }
+            }
+
             if (!isRecording) {
                 try {
                     startStreamingButton.classList.add('active');
@@ -515,10 +537,14 @@
                             const sample = Math.max(-1, Math.min(1, inputBuffer[i]));
                             int16Array[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
                         }
-                        socket.send(int16Array.buffer);
+                        if (isWebSocketConnected()) {
+                            socket.send(int16Array.buffer);
+                        }
                     };
                 } catch (error) {
                     console.error('Error accessing microphone:', error);
+                    startStreamingButton.classList.remove('active');
+                    isRecording = false;
                 }
             } else {
                 startStreamingButton.classList.remove('active');

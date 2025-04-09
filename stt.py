@@ -1,6 +1,8 @@
 import datetime
 import uuid
 import io
+
+import torch
 from funasr import AutoModel
 import torchaudio
 import os
@@ -9,7 +11,10 @@ from modelscope import snapshot_download
 from wav_handle import *
 from config_reader import SpeakerConfigReader
 
-
+if torch.cuda.is_available():
+    device = "cuda:0"  # 使用第一个 GPU
+else:
+    device = "cpu"
 class FunasrSTT:
     def __init__(self, thred_sv=0.45):
         models = [
@@ -69,6 +74,7 @@ class FunasrSTT:
             task='speaker-verification',
             model='D:/my_code/model/speech_campplus_sv_zh-cn_16k-common',
             model_revision='v1.0.0',
+            device=device
         )
 
         self.result_queue = []
