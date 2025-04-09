@@ -317,22 +317,69 @@
                     const text = data.text;
                     const name = data.name || '';
 
-                    // 为该 id 分配一个颜色
-                    if (!idColorMap.hasOwnProperty(id)) {
-                        console.log('new id', id);
+                    // 检查是否已存在该ID
+                    const isNewId = !idColorMap.hasOwnProperty(id);
+
+                    // 如果是新ID且颜色已用完
+                    if (isNewId && Object.keys(idColorMap).length >= 8) {
+                        // 找到消息量最低的ID
+                        let minCount = Infinity;
+                        let idToRemove = null;
+
+                        for (const existingId in idMessageCount) {
+                            if (idMessageCount[existingId] < minCount) {
+                                minCount = idMessageCount[existingId];
+                                idToRemove = existingId;
+                            }
+                        }
+
+                        if (idToRemove) {
+                            // 获取要移除ID的颜色
+                            const colorToReuse = selectColors[idColorMap[idToRemove]];
+
+                            // 1. 从DOM中移除对应的nameBox
+                            const nameBoxToRemove = idNameBoxMap[idToRemove];
+                            if (nameBoxToRemove && nameBoxToRemove.parentNode) {
+                                nameBoxToRemove.parentNode.removeChild(nameBoxToRemove);
+                            }
+
+                            // 2. 从DOM中移除该ID的所有消息
+                            const messagesToRemove = document.querySelectorAll(`.message-box[data-id="${idToRemove}"]`);
+                            messagesToRemove.forEach(msg => msg.parentNode.removeChild(msg));
+
+                            // 3. 从设置界面移除对应的设置项
+                            const settingToRemove = document.querySelector(`.nameColorSetting .nameBox[style*="${colorToReuse}"]`);
+                            if (settingToRemove && settingToRemove.parentNode) {
+                                settingToRemove.parentNode.removeChild(settingToRemove.parentNode);
+                            }
+
+                            // 4. 从内存中删除相关数据
+                            delete idColorMap[idToRemove];
+                            delete idNameBoxMap[idToRemove];
+                            delete idMessageCount[idToRemove];
+
+                            // 为新ID分配回收的颜色
+                            idColorMap[id] = selectColors.indexOf(colorToReuse);
+                        }
+                    }
+
+                    // 为新ID分配颜色（如果没有回收颜色）
+                    if (isNewId && !idColorMap.hasOwnProperty(id)) {
                         idColorMap[id] = Object.keys(idColorMap).length % selectColors.length;
                     }
+
                     const color = selectColors[idColorMap[id]];
 
-                    // 处理姓名栏
-                    if (!idNameBoxMap.hasOwnProperty(id)) {
+                    // 处理姓名栏（如果是新ID）
+                    if (isNewId) {
                         console.log('new name', id);
                         const nameBar = document.getElementById('nameBar');
                         const nameBox = document.createElement('div');
                         nameBox.classList.add('nameBox');
                         nameBox.style.backgroundColor = color;
-                        if (!nameBox.textContent){
-                            nameBox.textContent = name;}
+                        if (!nameBox.textContent) {
+                            nameBox.textContent = name;
+                        }
                         nameBar.insertBefore(nameBox, startStreamingButton);
                         idNameBoxMap[id] = nameBox;
 
@@ -363,9 +410,6 @@
 
                     // 将新消息框添加到消息容器的末尾
                     messageContainer.prepend(messageDiv);
-
-                    // 滚动到消息容器底部
-                    messageContainer.scrollTop = messageContainer.scrollHeight;
 
                     // 将对应的 namebox 移动到最左边
                     const nameBar = document.getElementById('nameBar');

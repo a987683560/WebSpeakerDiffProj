@@ -1,3 +1,4 @@
+import datetime
 import json
 from wav_handle import read_wav_to_bytes
 
@@ -62,6 +63,8 @@ class SpeakerConfigReader:
                 if wav_bytes:
                     self.speaker_config[speaker_id]['wav_bytes'] = wav_bytes
                     del self.speaker_config[speaker_id]['audio_path']
+                    self.speaker_config[speaker_id]['timestamp'] = datetime.datetime.now()
+                    self.speaker_config[speaker_id]['voice_times'] = 1
 
     def get_speaker_config(self):
         return self.speaker_config

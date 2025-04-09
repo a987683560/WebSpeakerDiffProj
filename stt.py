@@ -1,3 +1,4 @@
+import datetime
 import uuid
 import io
 from funasr import AutoModel
@@ -122,11 +123,36 @@ class FunasrSTT:
             if sv_result == "yes":
                 self.voiceprint_dict[existing_user_id]['wav_bytes'] = (
                     merge_wav_bytes(self.voiceprint_dict[existing_user_id]['wav_bytes'], audio_bytes))
+                self.voiceprint_dict[existing_user_id]['voice_times'] += 1
+                self.voiceprint_dict_lifecycle_management(existing_user_id)
                 return existing_user_id
 
         user_id = str(uuid.uuid4())
         self.voiceprint_dict[user_id] = {
             'wav_bytes': audio_bytes,
-            'name': ''
+            'name': '',
+            'timestamp': datetime.datetime.now(),
+            'voice_times': 1
         }
+        self.voiceprint_dict_lifecycle_management(user_id)
         return user_id
+
+    def voiceprint_dict_lifecycle_management(self, speaker_id_now):
+        voiceprint_dict_new = {}
+        del_speaker_id_list = []
+        time_now = datetime.datetime.now()
+        for user_id, one_voiceprint_dict in self.voiceprint_dict.items():
+            if user_id == speaker_id_now:
+                voiceprint_dict_new[speaker_id_now] = self.voiceprint_dict[user_id]
+            else:
+                if time_now - one_voiceprint_dict['timestamp'] > datetime.timedelta(minutes=10):
+                    del_speaker_id_list.append(user_id)
+        for speaker_id in del_speaker_id_list:
+            del self.voiceprint_dict[speaker_id]
+        sorted_dict_by_value = dict(sorted(self.voiceprint_dict.items(), key=lambda item: item[1]['voice_times'], reverse=True))
+        voiceprint_dict_new.update(sorted_dict_by_value)
+        self.voiceprint_dict = voiceprint_dict_new
+
+
+
+

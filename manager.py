@@ -89,7 +89,7 @@ class AudioRecorder:
         # 连续检测到无语音活动的次数阈值，增加此值可使判断语音停止更具惰性
         self.check_speak_alive_threshold = vad_settings.get('check_speak_alive_threshold', 3)
 
-        self.stt = FunasrSTT(funasr_settings.get('thred_sv', 0.42))
+        self.stt = FunasrSTT(funasr_settings.get('thred_sv', 0.35))
         # 实时检测说话人相关参数，弃用
         # self.speaker_id_check_cycle = speaker_id_settings.get('speaker_id_check_cycle', 4)
         # self.speaker_id_check_threshold = speaker_id_settings.get('speaker_id_check_threshold', 2)
@@ -134,7 +134,6 @@ class AudioRecorder:
             self.audio_buffer_now.append(self.audio_frames.get())
             if not self.check_audio_length(self.audio_buffer_now):  # 判断长度是否达标
                 continue
-            print('长度达标')
 
             raw_audio = b''.join(self.audio_buffer_now)
             raw_audio = resample_int16_audio_2(raw_audio)  # ！！！！注意此处将前端采集的44100采样率的音频转化成了16000！！！！
@@ -142,18 +141,17 @@ class AudioRecorder:
 
             if not vad_detected:
                 vad_check_result = vad_check(raw_audio)
-                print(vad_check_result)
                 if vad_check_result:  # 通过vad检测是否有语音活动
                     self.segments_to_save.append((raw_audio, time.time()))
                     vad_detected = True
                     print(f'检测到语音活动', vad_activity_count)
                 else:  # 当前没有语音活动
-                    print(f'vad not pass')
+                    # print(f'vad not pass')
                     # 向 deque 中添加元素，若超过最大长度会自动移除最旧元素
                     raw_audio_before.append((raw_audio, time.time()))
                     # raw_audio_others_speak.append((raw_audio, time.time()))
                     if not self.segments_to_save:  # 空数据，证明之前没有语音活动
-                        print('空数据')
+                        pass
                     vad_activity_count = 0  # 无语音活动，重置计数
             else:
                 no_vad_result = no_vad_check(raw_audio)
