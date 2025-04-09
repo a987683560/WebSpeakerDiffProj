@@ -292,7 +292,7 @@
                 console.error('WebSocket error:', event);
                 // 发生错误，设置为红色
                 startStreamingButton.style.setProperty('--line-color', 'red');
-                alert('Connection failed. Please try again.');
+                // alert('Connection failed. Please try again.');
             });
 
             socket.addEventListener('close', (event) => {

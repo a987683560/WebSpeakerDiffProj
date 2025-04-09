@@ -107,6 +107,10 @@ def slice_wav_bytes(wav_bytes, start_time, end_time):
     start_byte = int(start_time * byte_rate)
     end_byte = int(end_time * byte_rate)
 
+    # 确保偏移量是 block_align 的整数倍
+    start_byte = (start_byte // block_align) * block_align
+    end_byte = (end_byte // block_align) * block_align
+
     # 确保偏移量在数据块范围内
     if start_byte > subchunk2_size:
         start_byte = subchunk2_size
@@ -133,11 +137,12 @@ def slice_wav_bytes(wav_bytes, start_time, end_time):
     return new_wav_bytes
 
 
+
 def save_audio_file(audio_bytes, audio_output_path, speaker_id='0', audio_channels=1, audio_rate=16000):
     """
     将音频数据保存为 WAV 文件到指定目录
     """
-    file_name = os.path.join(audio_output_path, f"{speaker_id}_{int(time.time())}.wav")
+    file_name = os.path.join(audio_output_path, f"{speaker_id}.wav")
     with wave.open(file_name, 'wb') as wf:
         wf.setnchannels(audio_channels)
         wf.setsampwidth(2)  # 16-bit PCM

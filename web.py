@@ -10,6 +10,7 @@ connected_clients = set()
 audio_recorder = AudioRecorder()
 audio_recorder.start_audio_handle_loop()
 
+
 # 处理 WebSocket 连接
 async def handle_connection(websocket, path):
     # 将新连接的客户端添加到集合中
@@ -49,7 +50,6 @@ async def send_messages():
                     'text': text_id_data[2],
                 })
                 # 遍历所有连接的客户端并发送文本数据
-                print('###', connected_clients)
                 for client in connected_clients.copy():
                     try:
                         for i in range(1):

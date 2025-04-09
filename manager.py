@@ -1,19 +1,14 @@
 import logging
 import queue
 import threading
-
 import pyaudio
 import webrtcvad
 from collections import deque
-
 import ollama_client
 from stt import FunasrSTT
 from wav_handle import *
 from config_reader import ConfigReader
-from ollama_client import OllamaClient
 
-# 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 text_speaker_id = queue.Queue()  # 当前的语音片缓存
 
@@ -26,15 +21,15 @@ def consecutive_check(check_func, check_times=2):
         result = check_func(*args, **kwargs)
         if result:
             consecutive_passes += 1
-            logging.info(f"检测合格，当前连续合格次数: {consecutive_passes}")
+            logging.debug(f"检测合格，当前连续合格次数: {consecutive_passes}")
             if consecutive_passes == check_times:
                 consecutive_passes = 0
-                logging.info("达到指定连续合格次数，返回 True")
+                logging.debug("达到指定连续合格次数，返回 True")
                 return True
         else:
             prev_passes = consecutive_passes
             consecutive_passes = 0
-            logging.info(f"检测不合格，之前连续合格次数: {prev_passes}，连续合格次数重置为 0")
+            logging.debug(f"检测不合格，之前连续合格次数: {prev_passes}，连续合格次数重置为 0")
         return False
 
     return wrapper
@@ -144,7 +139,7 @@ class AudioRecorder:
                 if vad_check_result:  # 通过vad检测是否有语音活动
                     self.segments_to_save.append((raw_audio, time.time()))
                     vad_detected = True
-                    print(f'检测到语音活动', vad_activity_count)
+                    print(f'检测到语音活动', str(vad_activity_count))
                 else:  # 当前没有语音活动
                     # print(f'vad not pass')
                     # 向 deque 中添加元素，若超过最大长度会自动移除最旧元素
@@ -159,7 +154,6 @@ class AudioRecorder:
                     print('连续检测到无语音活动，认为语音停止')
                     # 计算需要保留的音频片段，这一段是为了将可能存在语音的头加回来
                     raw_audio_before_list = list(raw_audio_before)
-                    print(len(raw_audio_before_list))
                     self.segments_to_save = raw_audio_before_list + self.segments_to_save
                     # 减去 (self.check_speak_alive_threshold - 2) 是为了在判断语音停止后多保留一些音频片段，确保数据的完整性
                     useful_length = len(self.segments_to_save) - (self.check_speak_alive_threshold - 2)
@@ -177,7 +171,7 @@ class AudioRecorder:
                 else:
                     self.segments_to_save.append((raw_audio, time.time()))
                     vad_activity_count += 1
-                    # print('count', vad_activity_count)
+                    # print('count', str(vad_activity_count))
                     # -----以下为实时检测说话人，资源占用及其爆炸，请不要打开-----
                     # if vad_activity_count == self.speaker_id_check_cycle:
                     #     print('达到连续有语音活动次数，开始第一次说话人检测')
@@ -193,7 +187,7 @@ class AudioRecorder:
                     #         raw_audio_others_speak_list = list(raw_audio_others_speak)
                     #         num_elements = len(raw_audio_others_speak_list) * 3 // 4
                     #         useful_length = len(self.segments_to_save) - num_elements
-                    #         print('useful_length', useful_length)
+                    #         print('useful_length', str(useful_length))
                     #         self.segments_to_save = self.segments_to_save[:useful_length]
                     #         self.handle_audio_segments()
                     #         self.segments_to_save += raw_audio_others_speak_list[-useful_length:]
@@ -208,13 +202,12 @@ class AudioRecorder:
         self.segments_to_save = []
         audio_bytes = convert_to_wav_bytes(audio_frames)  # 进行 wav 转换
         audio_bytes_handle = self.stt.do_trans(audio_bytes)
-        print('audio_bytes_handle', audio_bytes_handle)
         try:
             audio_bytes_chunk_list = audio_bytes_handle[0]["sentence_info"]
         except:
             print('垃圾信息')
             return
-        print(audio_bytes_chunk_list)  # TODO 此处为stt输出的语音内容
+        print(str(audio_bytes_chunk_list))
         # speaker_id = self.stt.do_distinguish_person(audio_bytes)
         # print('speaker_id', speaker_id)
 
@@ -300,3 +293,4 @@ class AudioRecorder:
 # a = AudioRecorder()
 # a.start_recording()
 # a.start_audio_handle_loop()
+
