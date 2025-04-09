@@ -47,6 +47,7 @@ class FunasrSTT:
             "asr": "speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch",
             "vad": "speech_fsmn_vad_zh-cn-16k-common-pytorch",
             "punc": "punc_ct-transformer_zh-cn-common-vocab272727-pytorch",
+            "cam": "speech_campplus_sv_zh-cn_16k-common"
         }
 
         # 生成模型路径
@@ -72,7 +73,7 @@ class FunasrSTT:
 
         self.sv_pipeline = pipeline(
             task='speaker-verification',
-            model='D:/my_code/model/speech_campplus_sv_zh-cn_16k-common',
+            model=self.model_paths["cam"],
             model_revision='v1.0.0',
             device=device
         )
@@ -150,6 +151,7 @@ class FunasrSTT:
         for user_id, one_voiceprint_dict in self.voiceprint_dict.items():
             if user_id == speaker_id_now:
                 voiceprint_dict_new[speaker_id_now] = self.voiceprint_dict[user_id]
+                one_voiceprint_dict['timestamp'] = datetime.datetime.now()
             else:
                 if time_now - one_voiceprint_dict['timestamp'] > datetime.timedelta(minutes=10):
                     del_speaker_id_list.append(user_id)

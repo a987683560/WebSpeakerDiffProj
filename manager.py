@@ -208,9 +208,10 @@ class AudioRecorder:
         self.segments_to_save = []
         audio_bytes = convert_to_wav_bytes(audio_frames)  # 进行 wav 转换
         audio_bytes_handle = self.stt.do_trans(audio_bytes)
-        # print('audio_bytes_handle', audio_bytes_handle)
-        audio_bytes_chunk_list = audio_bytes_handle[0].get("sentence_info", [])
-        if not audio_bytes_chunk_list:
+        print('audio_bytes_handle', audio_bytes_handle)
+        try:
+            audio_bytes_chunk_list = audio_bytes_handle[0]["sentence_info"]
+        except:
             print('垃圾信息')
             return
         print(audio_bytes_chunk_list)  # TODO 此处为stt输出的语音内容
