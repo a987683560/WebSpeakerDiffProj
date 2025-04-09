@@ -156,7 +156,7 @@ class AudioRecorder:
             else:
                 no_vad_result = no_vad_check(raw_audio)
                 if no_vad_result:
-                    print('连续三次检测到无语音活动，认为语音停止')
+                    print('连续检测到无语音活动，认为语音停止')
                     # 计算需要保留的音频片段，这一段是为了将可能存在语音的头加回来
                     raw_audio_before_list = list(raw_audio_before)
                     print(len(raw_audio_before_list))
