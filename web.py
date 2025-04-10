@@ -1,8 +1,6 @@
 import asyncio
 import json
 import websockets
-from queue import Queue
-from aioconsole import ainput
 from manager import *
 
 # 存储所有连接的 WebSocket 客户端
@@ -12,7 +10,7 @@ audio_recorder.start_audio_handle_loop()
 
 
 # 处理 WebSocket 连接
-async def handle_connection(websocket, path):
+async def handle_connection(websocket):
     # 将新连接的客户端添加到集合中
     connected_clients.add(websocket)
     try:

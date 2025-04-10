@@ -13,7 +13,7 @@
 ## 安装依赖
 
 ```bash
-pip install requests torchaudio websockets aioconsole funasr modelscope
+pip install requests torchaudio websockets aioconsole funasr pyaudio webrtcvad modelscope[framework]
 ```
 
 ## 项目结构
@@ -95,3 +95,8 @@ python web.py
 - 确保 `config.json` 和 `speaker_config.json` 文件中的配置信息正确。
 - 运行项目前，确保所需的模型已经下载或可以正常访问，直接运行会尝试下载模型至默认地址。
 - 若出现连接错误或其他异常，请检查网络连接和配置文件。
+
+## 演示
+
+![image-20250410193506807](/pic/image-20250410193506807.png)
+

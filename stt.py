@@ -1,11 +1,9 @@
 import datetime
 import uuid
-import io
 
 import torch
 from funasr import AutoModel
 import torchaudio
-import os
 from modelscope.pipelines import pipeline
 from modelscope import snapshot_download
 from wav_handle import *

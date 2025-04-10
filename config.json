@@ -20,8 +20,8 @@
     "ollama_settings": {
         "url": "http://localhost:11434/api/generate",
         "model": "qwen2.5:0.5b",
-        "prompt": "将内容翻译成英语（不要带任何多余的话，不需要解释，只需要翻译即可，冒号后是你需要翻译的内容）：",
-        "temperature": 0.7,
+        "prompt": "将内容翻译成英语：",
+        "temperature": 0.5,
         "top_p": 0.9
     },
     "funasr_settings": {
