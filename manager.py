@@ -156,10 +156,10 @@ class AudioRecorder:
                     raw_audio_before_list = list(raw_audio_before)
                     self.segments_to_save = raw_audio_before_list + self.segments_to_save
                     # 减去 (self.check_speak_alive_threshold - 2) 是为了在判断语音停止后多保留一些音频片段，确保数据的完整性
-                    useful_length = len(self.segments_to_save) - (self.check_speak_alive_threshold - 2)
+                    useful_length = len(self.segments_to_save) - max((self.check_speak_alive_threshold - 2), 0)
                     print(f'len{useful_length}, len{len(self.segments_to_save)}')
 
-                    # self.segments_to_save = self.segments_to_save[:useful_length]
+                    self.segments_to_save = self.segments_to_save[:useful_length]
                     auido_segments_th = threading.Thread(target=self.handle_audio_segments)
                     auido_segments_th.start()
                     # self.handle_audio_segments()
@@ -283,12 +283,6 @@ class AudioRecorder:
         if num > flag_rate:
             return True
         return False
-
-    def check_speak_alive(self, dead_count):
-        if dead_count >= self.check_speak_alive_threshold:
-            return False
-        else:
-            return True
 
 # a = AudioRecorder()
 # a.start_recording()
